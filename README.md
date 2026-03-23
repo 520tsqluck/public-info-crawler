@@ -15,6 +15,7 @@ markdown
 ## 环境要求
 - Python 3.7+
 - 依赖库见 `requirements.txt`
+- 站大爷代理IP `(https://www.zdaye.com/sepro/xaxzdo)`
 
 ## 快速开始
 1. 克隆仓库
