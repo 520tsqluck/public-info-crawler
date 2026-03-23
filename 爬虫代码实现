@@ -1,0 +1,117 @@
+我们以采集“新浪新闻”的国内新闻列表为例（仅作为示例，实际使用时请替换为目标网站）。
+注意：正式编写前应先检查目标网站的 robots.txt（如 https://news.sina.com.cn/robots.txt），确保允许爬取。
+
+3.1 创建主爬虫文件 crawler.py
+python
+import requests
+from bs4 import BeautifulSoup
+import time
+import random
+import csv
+import json
+from fake_useragent import UserAgent
+
+class NewsCrawler:
+    def __init__(self):
+        self.ua = UserAgent()
+        self.headers = {
+            'User-Agent': self.ua.random,
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+        }
+        self.session = requests.Session()
+        self.base_url = 'https://news.sina.com.cn/china/'  # 示例：新浪国内新闻
+
+    def get_page(self, url):
+        """发送请求，返回响应文本，处理异常"""
+        try:
+            # 随机延时 1~3 秒，降低对服务器的压力
+            time.sleep(random.uniform(1, 3))
+            response = self.session.get(url, headers=self.headers, timeout=10)
+            response.raise_for_status()
+            response.encoding = 'utf-8'  # 根据网站实际编码调整
+            return response.text
+        except Exception as e:
+            print(f"请求失败: {e}")
+            return None
+
+    def parse_news_list(self, html):
+        """解析新闻列表页，提取每条新闻的标题和链接"""
+        soup = BeautifulSoup(html, 'lxml')
+        news_items = []
+        # 示例：新浪国内新闻列表页的标题和链接通常在 <a> 标签中，class 可能为 'news-item' 或类似
+        # 实际需根据目标网站的具体 HTML 结构来写选择器
+        for item in soup.select('.news-item a'):  # 示例选择器
+            title = item.get_text(strip=True)
+            link = item.get('href')
+            if title and link:
+                news_items.append({'title': title, 'link': link})
+        return news_items
+
+    def parse_news_detail(self, html):
+        """解析新闻详情页，提取发布时间、正文等"""
+        soup = BeautifulSoup(html, 'lxml')
+        # 示例：时间可能在 meta 标签或特定 class 中
+        pub_time = soup.select_one('.date')  # 示例选择器
+        pub_time = pub_time.get_text(strip=True) if pub_time else ''
+        content = soup.select_one('.article')  # 示例选择器
+        content = content.get_text(strip=True) if content else ''
+        return {'pub_time': pub_time, 'content': content}
+
+    def crawl(self, pages=5):
+        """主爬取流程"""
+        all_news = []
+        # 构造列表页 URL（示例中首页 URL 不变，分页通常通过参数 page 控制）
+        for page_num in range(1, pages+1):
+            # 分页 URL 示例：https://news.sina.com.cn/china/index_2.shtml
+            if page_num == 1:
+                list_url = self.base_url
+            else:
+                list_url = f"{self.base_url}index_{page_num}.shtml"
+            print(f"正在抓取列表页: {list_url}")
+            html = self.get_page(list_url)
+            if not html:
+                continue
+            news_list = self.parse_news_list(html)
+            for news in news_list:
+                print(f"  抓取详情: {news['title']}")
+                detail_html = self.get_page(news['link'])
+                if detail_html:
+                    detail = self.parse_news_detail(detail_html)
+                    news.update(detail)
+                else:
+                    news['pub_time'] = ''
+                    news['content'] = ''
+                all_news.append(news)
+                # 适当休息，避免过快请求
+                time.sleep(random.uniform(0.5, 1.5))
+        return all_news
+
+    def save_to_csv(self, data, filename='news.csv'):
+        """保存为 CSV"""
+        keys = data[0].keys() if data else []
+        with open(filename, 'w', newline='', encoding='utf-8-sig') as f:
+            writer = csv.DictWriter(f, fieldnames=keys)
+            writer.writeheader()
+            writer.writerows(data)
+        print(f"已保存到 {filename}")
+
+    def save_to_json(self, data, filename='news.json'):
+        """保存为 JSON"""
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"已保存到 {filename}")
+
+if __name__ == '__main__':
+    crawler = NewsCrawler()
+    news_data = crawler.crawl(pages=2)  # 先测试爬2页
+    if news_data:
+        crawler.save_to_csv(news_data)
+        crawler.save_to_json(news_data)
+    else:
+        print("未采集到数据")
+3.2 补充说明
+选择器：上述代码中的 CSS 选择器（如 .news-item a、.date、.article）是示例，你需要根据实际目标网站的 HTML 结构调整。可以使用浏览器开发者工具（F12）查看元素，找到对应的 class 或 id。
+
+分页逻辑：不同网站分页方式不同，有的在 URL 中带 page 参数，有的通过 ?p=2，有的在 index_2.shtml。需要针对目标网站调整。
+
+编码：response.encoding 需根据网站返回的编码设置，常见的有 utf-8、gbk、gb2312 等。如果不确定，可以先用 requests.utils.get_encoding_from_headers(response.headers) 或直接查看网页源码。
