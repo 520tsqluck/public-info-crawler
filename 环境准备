@@ -1,0 +1,31 @@
+2.1 安装 Python
+确保你的电脑上安装了 Python 3.7 或更高版本。
+检查命令：python --version 或 python3 --version
+
+2.2 创建项目目录
+bash
+mkdir public-info-crawler
+cd public-info-crawler
+2.3 创建虚拟环境（推荐）
+bash
+python -m venv venv
+# 激活虚拟环境
+# Windows:
+venv\Scripts\activate
+# macOS/Linux:
+source venv/bin/activate
+2.4 安装依赖库
+我们将使用 requests 发送 HTTP 请求，BeautifulSoup4 解析 HTML，pandas 进行数据存储（可选），fake-useragent 随机 User-Agent。
+创建 requirements.txt 文件，内容如下：
+
+txt
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+fake-useragent==1.4.0
+pandas==2.1.4
+然后执行：
+
+bash
+pip install -r requirements.txt
+3. 爬虫代码实现
