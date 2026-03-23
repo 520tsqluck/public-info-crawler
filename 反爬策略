@@ -1,0 +1,21 @@
+为了减少被网站封禁的风险，我们在代码中已加入：
+
+随机 User-Agent：使用 fake-useragent 库每次请求随机更换。
+
+延时：每次请求后 time.sleep(random.uniform(1, 3))，模拟人类浏览行为。
+
+异常处理：避免因单次请求失败导致程序崩溃。
+
+会话保持：使用 requests.Session() 维持 Cookie，部分网站需要。
+
+请求头：添加常见的 Accept-Language 等头信息。
+
+如果目标网站反爬较强，可进一步加入：
+
+代理 IP：使用 proxies 参数，轮换代理。我用的是https://www.zdaye.com/sepro/xaxzdo
+
+限速：控制每秒请求数（如使用 time.sleep）。
+
+重试机制：使用 requests 的 adapters 或 retry 库。
+
+模拟浏览器：使用 selenium 或 playwright 处理 JavaScript 渲染的页面（但性能较差，需谨慎）。
