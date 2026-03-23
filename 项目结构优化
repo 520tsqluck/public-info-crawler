@@ -1,0 +1,39 @@
+随着代码增长，建议将不同功能拆分到不同文件，形成模块化结构。例如：
+
+text
+public-info-crawler/
+├── README.md
+├── requirements.txt
+├── .gitignore
+├── crawler/
+│   ├── __init__.py
+│   ├── spider.py        # 主爬虫逻辑
+│   ├── parser.py        # 解析函数
+│   ├── storage.py       # 数据存储
+│   └── utils.py         # 通用工具（请求、延时等）
+├── config.py            # 配置文件（URL、延时等）
+├── main.py              # 程序入口
+└── data/                # 存放采集结果
+    ├── news.csv
+    └── news.json
+示例 main.py：
+
+python
+from crawler.spider import NewsCrawler
+import config
+
+if __name__ == '__main__':
+    crawler = NewsCrawler(config.TARGET_URL)
+    data = crawler.crawl(pages=config.PAGES)
+    if data:
+        crawler.save_to_csv(data, config.CSV_PATH)
+        crawler.save_to_json(data, config.JSON_PATH)
+示例 config.py：
+
+python
+TARGET_URL = 'https://news.sina.com.cn/china/'
+PAGES = 5
+CSV_PATH = 'data/news.csv'
+JSON_PATH = 'data/news.json'
+REQUEST_DELAY = (1, 3)
+这样更易于维护和扩展。
